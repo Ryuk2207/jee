@@ -1,0 +1,27 @@
+[
+  {
+    "text": "What is the value of sin²θ + cos²θ?",
+    "options": ["0", "1", "2", "θ"],
+    "answer": 1
+  },
+  {
+    "text": "The derivative of x² is?",
+    "options": ["x", "2x", "x²", "None of these"],
+    "answer": 1
+  },
+  {
+    "text": "Which of the following is NOT a prime number?",
+    "options": ["2", "3", "4", "5"],
+    "answer": 2
+  },
+  {
+    "text": "What is the chemical symbol for Gold?",
+    "options": ["Au", "Ag", "Gd", "Go"],
+    "answer": 0
+  },
+  {
+    "text": "Which planet is known as the Red Planet?",
+    "options": ["Earth", "Mars", "Jupiter", "Venus"],
+    "answer": 1
+  }
+]
