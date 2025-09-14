@@ -13,8 +13,10 @@ const optionsEl = document.getElementById('options');
 const qcount = document.getElementById('qcount');
 const quizTitle = document.getElementById('quizTitle');
 const quizMeta = document.getElementById('quizMeta');
+const timerEl = document.getElementById('timer');
 
 let current = {index:0, questions:[], answers:[], startedAt:null};
+let timerInterval = null;
 
 function renderTestList(){
   testList.innerHTML = '';
@@ -42,17 +44,22 @@ async function startSuite(file, title){
     quizMeta.textContent = questions.length + ' questions • untimed';
     overlay.classList.add('open');
     renderQuestion();
+    startTimer();
+    removeResultsBox();
   } catch(err){
     alert('Could not load test: '+err.message);
   }
 }
 
-// ...existing code...
+function removeResultsBox() {
+  const oldResults = document.querySelector('.results');
+  if (oldResults) oldResults.remove();
+}
 
 function renderQuestion(){
   const q = current.questions[current.index];
   if(!q) return;
-  questionText.innerHTML = q.question || q.q || ('Question '+(current.index+1));
+  questionText.innerHTML = q.q || q.question || ('Question '+(current.index+1));
   optionsEl.innerHTML = '';
   q.options.forEach((opt,i)=>{
     const btn = document.createElement('button');
@@ -68,6 +75,13 @@ function renderQuestion(){
   // Remove submit box if not last question
   const confirmBox = document.getElementById('confirmBox');
   if (confirmBox) confirmBox.remove();
+
+  // Show Skip button if not last question
+  if(current.index < current.questions.length-1) {
+    document.getElementById('nextBtn').style.display = '';
+  } else {
+    document.getElementById('nextBtn').style.display = '';
+  }
 }
 
 function selectOption(i, btn){
@@ -103,39 +117,7 @@ function selectOption(i, btn){
 }
 
 function showConfirmBox() {
-  // Remove submit button from footer
-  document.getElementById('nextBtn').style.display = 'none';
-
-  // Show confirm box
-  let quizBody = document.getElementById('quizBody');
-  let box = document.createElement('div');
-  box.id = 'confirmBox';
-  box.style = 'margin:18px 0;padding:18px;background:#fff;border-radius:12px;box-shadow:0 2px 8px #0002;text-align:center;';
-  box.innerHTML = `<div style="font-weight:700;font-size:18px;margin-bottom:10px">Confirm to submit</div>
-    <button class="btn" id="submitBtn">Submit</button>`;
-  quizBody.appendChild(box);
-  document.getElementById('submitBtn').onclick = showResults;
-}
-
-// Change "Next" to "Skip" everywhere
-document.getElementById('nextBtn').textContent = 'Skip';
-
-// ...existing code...
-
-document.getElementById('nextBtn').addEventListener('click', ()=>{
-  if(current.index < current.questions.length-1) {
-    current.index++;
-    renderQuestion();
-  } else if(current.index === current.questions.length-1) {
-    showConfirmBox();
-  }
-  // No submit here, handled by confirm box
-});
-
-// ...existing code...
-
-function showConfirmBox() {
-  // Remove submit button from footer
+  // Remove skip button from footer
   document.getElementById('nextBtn').style.display = 'none';
 
   // Remove any existing confirm box
@@ -173,11 +155,46 @@ function showConfirmBox() {
   document.getElementById('submitBtn').onclick = showResults;
 }
 
-// ...existing code...
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (current.index > 0) {
+    current.index--;
+    renderQuestion();
+    document.getElementById('nextBtn').style.display = '';
+    const confirmBox = document.getElementById('confirmBox');
+    if (confirmBox) confirmBox.remove();
+  }
+});
 
-// ...existing code...
+document.getElementById('endBtn').addEventListener('click', () => {
+  showConfirmBox();
+});
+
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  if(current.index < current.questions.length-1) {
+    current.index++;
+    renderQuestion();
+  } else if(current.index === current.questions.length-1) {
+    showConfirmBox();
+  }
+});
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    let elapsed = Math.floor((Date.now() - current.startedAt)/1000);
+    timerEl.textContent = 'Time: ' + formatTime(elapsed);
+  }, 1000);
+}
+
+function formatTime(sec) {
+  let m = Math.floor(sec/60);
+  let s = sec%60;
+  return m+':'+(s<10?'0':'')+s;
+}
+
 function showResults(){
   overlay.classList.remove('open');
+  clearInterval(timerInterval);
   let score=0,total=current.questions.length;
   current.questions.forEach((q,i)=>{
     if(q.correct===current.answers[i]) score++;
@@ -187,7 +204,8 @@ function showResults(){
   tpl.querySelector('#scoreCircle').style.setProperty('--pct', Math.round((score/total)*360)+'deg');
   tpl.querySelector('#scoreCircle').textContent = Math.round((score/total)*100)+'%';
   tpl.querySelector('#scoreText').textContent = `You scored ${score} / ${total}`;
-  tpl.querySelector('#timeTaken').textContent = 'Time: '+Math.round((Date.now()-current.startedAt)/1000)+'s';
+  let elapsed = Math.floor((Date.now()-current.startedAt)/1000);
+  tpl.querySelector('#timeTaken').textContent = 'Time: '+formatTime(elapsed);
   tpl.querySelector('#retryBtn').addEventListener('click', ()=> startSuite('short-test.json','Quick Test'));
   tpl.querySelector('#homeBtn').addEventListener('click', ()=> document.querySelector('.container').scrollIntoView({behavior:'smooth'}));
   document.body.appendChild(tpl);
